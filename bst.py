@@ -78,39 +78,22 @@ class BST:
     # ------------------------------------------------------------------ #
 
     def add(self, value: object) -> None:
-        # new node to be inserted
-        node = BSTNode(value)
-
-        # pointer to store the place
-        # where the new element has to inserted
-        x = self.root
-
-        # Pointer y maintains the the last position
-        # of pointer x
-        y = None
-
-        while (x != None):
-            y = x
-            if (value < x.value):
-                x = x.left
+        new_node = BSTNode(value)
+        if self._root is None:
+            self._root = new_node
+            return
+        current_node = self._root
+        while current_node is not None:
+            if value <= current_node.value:
+                if current_node.left is None:
+                    current_node.left = new_node
+                    return
+                current_node = current_node.left
             else:
-                x = x.right
-
-        # If the tree is empty,
-        # i.e y=None. Then we assign node as the root
-        if (y == None):
-            y = node
-            self.root = y
-
-        # If the new value is smaller/lesser then the leaf node value
-        # We make the new node its left child
-        elif (value < y.value):
-            y.left = node
-
-        # else make the new node its
-        # right child
-        else:
-            y.right = node
+                if current_node.right is None:
+                    current_node.right = new_node
+                    return
+                current_node = current_node.right
 
     def remove(self, value: object) -> bool:
         data = value
