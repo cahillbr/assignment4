@@ -109,7 +109,7 @@ class BST:
         node = stack.pop()
         data = value
         if node is None:
-            return Node(data)
+            return stack.pop(data)
         else:
             if data < node.data:
                 node.left = self._add(node.left, data)
