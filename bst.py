@@ -104,6 +104,7 @@ class BST:
         return True
 
     def add(self, value: object) -> None:
+        stack = Stack()
         self.value = value
         node = stack.pop()
         data = value
