@@ -11,25 +11,12 @@ from queue_and_stack import Queue, Stack
 
 
 class BSTNode:
-    """
-    Binary Search Tree Node class
-    DO NOT CHANGE THIS CLASS IN ANY WAY
-    """
-
     def __init__(self, value: object) -> None:
-        """
-        Initialize a new BST node
-        DO NOT CHANGE THIS METHOD IN ANY WAY
-        """
-        self.value = value   # to store node's data
-        self.left = None     # pointer to root of left subtree
-        self.right = None    # pointer to root of right subtree
+        self.value = value  # to store node's data
+        self.left = None  # pointer to root of left subtree
+        self.right = None  # pointer to root of right subtree
 
     def __str__(self) -> str:
-        """
-        Override string method
-        DO NOT CHANGE THIS METHOD IN ANY WAY
-        """
         return 'BST Node: {}'.format(self.value)
 
 
@@ -72,24 +59,9 @@ class BST:
         self._str_helper(node.right, values)
 
     def get_root(self) -> BSTNode:
-        """
-        Return root of tree, or None if empty
-        DO NOT CHANGE THIS METHOD IN ANY WAY
-        """
         return self._root
 
     def is_valid_bst(self) -> bool:
-        """
-        Perform pre-order traversal of the tree.
-        Return False if nodes don't adhere to the bst ordering property.
-
-        This is intended to be a troubleshooting method to help find any
-        inconsistencies in the tree after the add() or remove() operations.
-        A return of True from this method doesn't guarantee that your tree
-        is the 'correct' result, just that it satisfies bst ordering.
-
-        DO NOT CHANGE THIS METHOD IN ANY WAY
-        """
         stack = Stack()
         stack.push(self._root)
         while not stack.is_empty():
@@ -103,8 +75,17 @@ class BST:
                 stack.push(node.left)
         return True
 
+    # ------------------------------------------------------------------ #
+
     def add(self, value: object) -> None:
-        self.append(value)
+        if node is None:
+            return Node(data)
+        else:
+            if data < node.data:
+                node.left = self._add(node.left, data)
+            else:
+                node.right = self._add(node.right, data)
+            return node
 
     def remove(self, value: object) -> bool:
         data = value
