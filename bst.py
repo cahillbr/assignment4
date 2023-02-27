@@ -78,14 +78,22 @@ class BST:
     # ------------------------------------------------------------------ #
 
     def add(self, value: object) -> None:
-        if node is None:
-            return Node(data)
-        else:
-            if data < node.data:
-                node.left = self._add(node.left, data)
+        new_node = BSTNode(value)
+        if self._root is None:
+            self._root = new_node
+            return
+        current_node = self._root
+        while current_node is not None:
+            if value <= current_node.value:
+                if current_node.left is None:
+                    current_node.left = new_node
+                    return
+                current_node = current_node.left
             else:
-                node.right = self._add(node.right, data)
-            return node
+                if current_node.right is None:
+                    current_node.right = new_node
+                    return
+                current_node = current_node.right
 
     def remove(self, value: object) -> bool:
         data = value
