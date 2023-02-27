@@ -106,6 +106,8 @@ class BST:
     # ------------------------------------------------------------------ #
 
     def add(self, value: object) -> None:
+        data = value
+        node = 0
         if node is None:
             return Node(data)
         else:
