@@ -106,7 +106,6 @@ class BST:
     def add(self, value: object) -> None:
         self.value = value
         node = stack.pop()
-        stack = Stack()
         data = value
         if node is None:
             return Node(data)
