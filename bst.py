@@ -11,12 +11,25 @@ from queue_and_stack import Queue, Stack
 
 
 class BSTNode:
+    """
+    Binary Search Tree Node class
+    DO NOT CHANGE THIS CLASS IN ANY WAY
+    """
+
     def __init__(self, value: object) -> None:
-        self.value = value  # to store node's data
-        self.left = None  # pointer to root of left subtree
-        self.right = None  # pointer to root of right subtree
+        """
+        Initialize a new BST node
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        self.value = value   # to store node's data
+        self.left = None     # pointer to root of left subtree
+        self.right = None    # pointer to root of right subtree
 
     def __str__(self) -> str:
+        """
+        Override string method
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
         return 'BST Node: {}'.format(self.value)
 
 
@@ -59,9 +72,24 @@ class BST:
         self._str_helper(node.right, values)
 
     def get_root(self) -> BSTNode:
+        """
+        Return root of tree, or None if empty
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
         return self._root
 
     def is_valid_bst(self) -> bool:
+        """
+        Perform pre-order traversal of the tree.
+        Return False if nodes don't adhere to the bst ordering property.
+
+        This is intended to be a troubleshooting method to help find any
+        inconsistencies in the tree after the add() or remove() operations.
+        A return of True from this method doesn't guarantee that your tree
+        is the 'correct' result, just that it satisfies bst ordering.
+
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
         stack = Stack()
         stack.push(self._root)
         while not stack.is_empty():
@@ -79,43 +107,80 @@ class BST:
 
     def add(self, value: object) -> None:
         new_node = BSTNode(value)
-        if self._root is None:
+        if not self._root:
             self._root = new_node
-            return
-        current_node = self._root
-        while current_node is not None:
-            if value <= current_node.value:
-                if current_node.left is None:
-                    current_node.left = new_node
-                    return
-                current_node = current_node.left
-            else:
-                if current_node.right is None:
-                    current_node.right = new_node
-                    return
-                current_node = current_node.right
+        else:
+            current_node = self._root
+            while current_node:
+                if value <= current_node.value:
+                    if not current_node.left:
+                        current_node.left = new_node
+                        break
+                    else:
+                        current_node = current_node.left
+                else:
+                    if not current_node.right:
+                        current_node.right = new_node
+                        break
+                    else:
+                        current_node = current_node.right
 
     def remove(self, value: object) -> bool:
-        data = value
-        self.root = self._remove(self.root, data)
-
-    def _remove(self, node, data):
-        if node is None:
-            return node
-        if data == node.data:
-            if node.left is None:
-                return node.right
-            elif node.right is None:
-                return node.left
+        """
+        Removes value from the tree. Returns True if the value is removed.
+        Otherwise returns False. Implements O(N) runtime complexity.
+        """
+        node = self._root
+        parent = None
+        while node and node.value != value:
+            parent = node
+            if value < node.value:
+                node = node.left
             else:
-                min_right = self._find_min(node.right)
-                node.data = min_right.data
-                node.right = self._remove(node.right, min_right.data)
-        elif data < node.data:
-            node.left = self._remove(node.left, data)
+                node = node.right
+
+        if not node:  # value not found in the tree
+            return False
+
+        # Case 1: node has no children
+        if not node.left and not node.right:
+            if node is self._root:
+                self._root = None
+            elif node is parent.left:
+                parent.left = None
+            else:
+                parent.right = None
+
+        # Case 2: node has one child
+        elif not node.left or not node.right:
+            child = node.left or node.right
+            if node is self._root:
+                self._root = child
+            elif node is parent.left:
+                parent.left = child
+            else:
+                parent.right = child
+
+        # Case 3: node has two children
         else:
-            node.right = self._remove(node.right, data)
-        return node
+            # Find the minimum value in the right subtree
+            min_node = node.right
+            min_parent = node
+            while min_node.left:
+                min_parent = min_node
+                min_node = min_node.left
+
+            # Replace node's value with the minimum value
+            node.value = min_node.value
+
+            # Remove the minimum node
+            if min_node is min_parent.left:
+                min_parent.left = min_node.right
+            else:
+                min_parent.right = min_node.right
+
+        return True
+
 
     def _remove_no_subtrees(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
         self.root = self._remove_no_node(remove_parentt, remove_node)
@@ -195,61 +260,65 @@ class BST:
 
 
 def contains(self, value: object) -> bool:
-    data = value
-    return self._contains(self.root, data)
-
-
-def _contains(self, node, data):
-    if node is None:
+    if not self._root:  # empty tree
         return False
-    elif data == node.data:
-        return True
-    elif data < node.data:
-        return self._contains(node.left, data)
-    else:
-        return self._contains(node.right, data)
+
+    node = self._root
+    while node:
+        if value == node.value:  # value found
+            return True
+        elif value < node.value:  # search left subtree
+            node = node.left
+        else:  # search right subtree
+            node = node.right
+
+    return False
 
 
 def inorder_traversal(self) -> Queue:
-    self._inorder_traversal(self.root)
-    print()
+    queue = Queue()
+    self._inorder_traversal_helper(self._root, queue)
+    return queue
 
 
-def _inorder_traversal(self, node):
-    if node is not None:
-        self._inorder_traversal(node.left)
-        print(node.data, end=" ")
-        self._inorder_traversal(node.right)
+def _inorder_traversal_helper(self, node: BSTNode, queue: Queue) -> None:
+    """
+    Recursive helper method for inorder_traversal.
+    """
+    if not node:
+        return
+    self._inorder_traversal_helper(node.left, queue)
+    queue.enqueue(node.value)
+    self._inorder_traversal_helper(node.right, queue)
 
 
 def find_min(self) -> object:
-    return self._find_min(self.root)
+    if not self._root:
+        return None
 
-
-def _find_min(self, node):
-    if node.left is None:
-        return node
-    else:
-        return self._find_min(node.left)
+    node = self._root
+    while node.left:
+        node = node.left
+    return node.value
 
 
 def find_max(self) -> object:
-    return self._find_max(self.root)
+    if self._root is None:
+        return None
 
+    node = self._root
+    while node.right is not None:
+        node = node.right
 
-def _find_max(self, node):
-    if node.right is None:
-        return node
-    else:
-        return self._find_max(node.right)
+    return node.value
 
 
 def is_empty(self) -> bool:
-    return self.root is None
+    return self._root is None
 
 
 def make_empty(self) -> None:
-    self.root = None
+    self._root = None
 
 
 # ------------------- BASIC TESTING -----------------------------------------
