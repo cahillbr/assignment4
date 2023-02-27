@@ -106,15 +106,16 @@ class BST:
     # ------------------------------------------------------------------ #
 
     def add(self, value: object) -> None:
+        stack = Stack()
         data = value
-        node = 0
+        node = stack.pop()
         if node is None:
             return Node(data)
         else:
             if data < node.data:
-                node.left = self._add(node.left, data)
+                node.left = self.add(node.left, data)
             else:
-                node.right = self._add(node.right, data)
+                node.right = self.add(node.right, data)
             return node
 
     def remove(self, value: object) -> bool:
