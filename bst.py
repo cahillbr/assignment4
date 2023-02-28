@@ -108,27 +108,31 @@ class BST:
     def add(self, value: object) -> None:
         new_node = BSTNode(value)
 
-        if self._root is None:
+        # if tree is empty, set new_node as root
+        if not self._root:
             self._root = new_node
             return
 
-        current = self._root
+        # traverse the tree to find the appropriate place to insert new_node
+        curr_node = self._root
         while True:
-            if value <= current.value:
-                if current.left is None:
-                    current.left = new_node
-                    break
-                current = current.left
+            if value < curr_node.value:
+                if curr_node.left:
+                    curr_node = curr_node.left
+                else:
+                    curr_node.left = new_node
+                    return
             else:
-                if current.right is None:
-                    current.right = new_node
-                    break
-                current = current.right
+                if curr_node.right:
+                    curr_node = curr_node.right
+                else:
+                    curr_node.right = new_node
+                    return
 
     def remove(self, value: object) -> bool:
         """
-        Removes value from the tree. Returns True if the value is removed.
-        Otherwise returns False. Implements O(N) runtime complexity.
+        Remove a value from the tree.
+        Returns True if the value is removed, False otherwise.
         """
         node = self._root
         parent = None
@@ -181,144 +185,73 @@ class BST:
 
         return True
 
+    def contains(self, value: object) -> bool:
+        """
+        Return True if the value is in the tree, False otherwise
+        """
+        return self._contains_helper(self._root, value)
 
-    def _remove_no_subtrees(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
-        self.root = self._remove_no_node(remove_parentt, remove_node)
-
-    def _remove_no_node(self, root, key):
-        if not root:
-            return root
-        elif key < root.key:
-            root.left = self._remove_node(root.left, key)
-        elif key > root.key:
-            root.right = self._remove_node(root.right, key)
-        else:
-            if not root.left and not root.right:
-                root = None
-            elif not root.left:
-                root = root.right
-            elif not root.right:
-                root = root.left
-            else:
-                temp = self.find_min(root.right)
-                root.key = temp.key
-                root.right = self._remove_node(root.right, temp.key)
-        return root
-
-    def _remove_one_subtree(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
-        if remove_parent is None:
-            return remove_parent
-
-            # find the node to be removed and its parent node
-        parent = None
-        current = remove_parent
-        while current is not None and current.data != data:
-            parent = current
-            if data < current.data:
-                current = current.left
-            else:
-                current = current.right
-
-        # node not found
-        if current is None:
-            return remove_parent
-
-        # node has only left subtree
-        if current.right is None:
-            if parent is None:
-                remove_parent = current.left
-            elif parent.left == current:
-                parent.left = current.left
-            else:
-                parent.right = current.left
-
-        # node has only right subtree
-        elif current.left is None:
-            if parent is None:
-                self.root = current.right
-            elif parent.left == current:
-                parent.left = current.right
-            else:
-                parent.right = current.right
-
-        # node has both left and right subtrees
-        else:
-            successor_parent = current
-            successor = current.right
-            while successor.left is not None:
-                successor_parent = successor
-                successor = successor.left
-
-            current.data = successor.data
-
-            if successor_parent.left == successor:
-                successor_parent.left = successor.right
-            else:
-                successor_parent.right = successor.right
-
-        return remove_parent
-
-
-def contains(self, value: object) -> bool:
-    if not self._root:  # empty tree
-        return False
-
-    node = self._root
-    while node:
-        if value == node.value:  # value found
+    def _contains_helper(self, node: BSTNode, value: object) -> bool:
+        """
+        Recursive helper method for contains()
+        """
+        if node is None:
+            return False
+        elif node.value == value:
             return True
-        elif value < node.value:  # search left subtree
-            node = node.left
-        else:  # search right subtree
-            node = node.right
+        elif node.value > value:
+            return self._contains_helper(node.left, value)
+        else:  # node.value < value
+            return self._contains_helper(node.right, value)
 
-    return False
+    def inorder_traversal(self) -> Queue:
+        queue = Queue()
+        stack = Stack()
+        curr = self._root
+        while curr or not stack.is_empty():
+            while curr:
+                stack.push(curr)
+                curr = curr.left
+            curr = stack.pop()
+            queue.enqueue(curr.value)
+            curr = curr.right
+        return queue
 
+    def find_min(self) -> object:
+        """
+        Return the minimum value in the tree, or None if empty
+        """
+        if not self._root:
+            return None
+        return self._find_min_helper(self._root)
 
-def inorder_traversal(self) -> Queue:
-    queue = Queue()
-    self._inorder_traversal_helper(self._root, queue)
-    return queue
+    def _find_min_helper(self, node: BSTNode) -> object:
+        """
+        Recursive helper method to find minimum value in the tree
+        """
+        if not node.left:
+            return node.value
+        return self._find_min_helper(node.left)
 
+    def find_max(self) -> object:
+        """
+        Returns the highest value in the tree. If the tree is empty, the method should return None.
+        Implemented with O(N) runtime complexity.
+        """
+        if self._root is None:
+            return None
 
-def _inorder_traversal_helper(self, node: BSTNode, queue: Queue) -> None:
-    """
-    Recursive helper method for inorder_traversal.
-    """
-    if not node:
-        return
-    self._inorder_traversal_helper(node.left, queue)
-    queue.enqueue(node.value)
-    self._inorder_traversal_helper(node.right, queue)
+        current_node = self._root
+        while current_node.right is not None:
+            current_node = current_node.right
 
+        return current_node.value
 
-def find_min(self) -> object:
-    if not self._root:
-        return None
+    def is_empty(self) -> bool:
+        return self._root is None
 
-    node = self._root
-    while node.left:
-        node = node.left
-    return node.value
-
-
-def find_max(self) -> object:
-    if self._root is None:
-        return None
-
-    node = self._root
-    while node.right is not None:
-        node = node.right
-
-    return node.value
-
-
-def is_empty(self) -> bool:
-    return self._root is None
-
-
-def make_empty(self) -> None:
-    self._root = None
+    def make_empty(self) -> None:
+        self._root = None
 
 
 # ------------------- BASIC TESTING -----------------------------------------
