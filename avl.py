@@ -99,154 +99,465 @@ class AVL(BST):
 
     # ------------------------------------------------------------------ #
 
+# Name:
+# OSU Email:
+# Course: CS261 - Data Structures
+# Assignment:
+# Due Date:
+# Description:
 
-def add(self, value: object) -> None:
+
+import random
+from queue_and_stack import Queue, Stack
+from bst import BSTNode, BST
+
+
+class AVLNode(BSTNode):
     """
-    Add a new value to the tree while maintaining its AVL property.
-    Duplicate values are not allowed. If the value is already in the
-    tree, the method should not change the tree.
+    AVL Tree Node class. Inherits from BSTNode
+    DO NOT CHANGE THIS CLASS IN ANY WAY
     """
-    # create a new node
-    new_node = AVLNode(value)
+    def __init__(self, value: object) -> None:
+        """
+        Initialize a new AVL node
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        # call __init__() from parent class
+        super().__init__(value)
 
-    # check if the tree is empty
-    if self._root is None:
-        self._root = new_node
-        return
+        # new variables needed for AVL
+        self.parent = None
+        self.height = 0
 
-    # perform binary search to find the position to insert the new node
-    current_node = self._root
-    parent_node = None
-    while current_node is not None:
-        if value == current_node.value:
-            # the value is already in the tree
+    def __str__(self) -> str:
+        """
+        Override string method
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        return 'AVL Node: {}'.format(self.value)
+
+
+class AVL(BST):
+    """
+    AVL Tree class. Inherits from BST
+    """
+
+    def __init__(self, start_tree=None) -> None:
+        """
+        Initialize a new AVL Tree
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        # call __init__() from parent class
+        super().__init__(start_tree)
+
+    def __str__(self) -> str:
+        """
+        Override string method
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        values = []
+        super()._str_helper(self._root, values)
+        return "AVL pre-order { " + ", ".join(values) + " }"
+
+    def is_valid_avl(self) -> bool:
+        """
+        Perform pre-order traversal of the tree. Return False if there
+        are any problems with attributes of any of the nodes in the tree.
+
+        This is intended to be a troubleshooting 'helper' method to help
+        find any inconsistencies in the tree after the add() or remove()
+        operations. Review the code to understand what this method is
+        checking and how it determines whether the AVL tree is correct.
+
+        DO NOT CHANGE THIS METHOD IN ANY WAY
+        """
+        stack = Stack()
+        stack.push(self._root)
+        while not stack.is_empty():
+            node = stack.pop()
+            if node:
+                # check for correct height (relative to children)
+                left = node.left.height if node.left else -1
+                right = node.right.height if node.right else -1
+                if node.height != 1 + max(left, right):
+                    return False
+
+                if node.parent:
+                    # parent and child pointers are in sync
+                    if node.value < node.parent.value:
+                        check_node = node.parent.left
+                    else:
+                        check_node = node.parent.right
+                    if check_node != node:
+                        return False
+                else:
+                    # NULL parent is only allowed on the root of the tree
+                    if node != self._root:
+                        return False
+                stack.push(node.right)
+                stack.push(node.left)
+        return True
+
+    # ------------------------------------------------------------------ #
+
+    def add(self, value: object) -> None:
+        """
+        Add a node with value to the AVL Tree. If the value already exists,
+        do not add it again.
+        """
+        # BST insertion
+        new_node = AVLNode(value)
+        if self._root is None:
+            self._root = new_node
             return
-        elif value < current_node.value:
-            parent_node = current_node
-            current_node = current_node.left
+        node = self._root
+        while True:
+            if value < node.value:
+                if node.left is None:
+                    node.left = new_node
+                    new_node.parent = node
+                    break
+                node = node.left
+            elif value > node.value:
+                if node.right is None:
+                    node.right = new_node
+                    new_node.parent = node
+                    break
+                node = node.right
+            else:
+                # Value already exists, do not add it again.
+                return
+
+        # AVL balancing
+        while node is not None:
+            self._rebalance(node)
+            node = node.parent
+
+    def _rotate_left(self, node: AVLNode) -> AVLNode:
+        """
+        Rotate a node to the left. Return the new root of the subtree.
+        """
+        new_root = node.right
+        node.right = new_root.left
+        if new_root.left is not None:
+            new_root.left.parent = node
+        new_root.left = node
+        new_root.parent = node.parent
+        node.parent = new_root
+        self._update_height(node)
+        self._update_height(new_root)
+        return new_root
+
+    def _rotate_right(self, node: AVLNode) -> AVLNode:
+        """
+        Rotate a node to the right. Return the new root of the subtree.
+        """
+        new_root = node.left
+        node.left = new_root.right
+        if new_root.right is not None:
+            new_root.right.parent = node
+        new_root.right = node
+        new_root.parent = node.parent
+        node.parent = new_root
+        self._update_height(node)
+        self._update_height(new_root)
+        return new_root
+
+    def _balance_factor(self, node: AVLNode) -> int:
+        """
+        Calculate the balance factor of a node.
+        """
+        return self._get_height(node.left) - self._get_height(node.right)
+
+    def _get_height(self, node: AVLNode) -> int:
+        """
+        Get the height of a node.
+        """
+        if node is None:
+            return -1
+        return node.height
+
+    def _update_height(self, node: AVLNode) -> None:
+        """
+        Update the height of a node.
+        """
+        node.height = 1 + max(self._get_height(node.left), self._get_height(node.right))
+
+    def remove(self, value: object) -> bool:
+        node = self.find(value)
+        if not node:
+            return False
+
+        self._remove(node)
+        return True
+
+    def _remove(self, node: AVLNode) -> None:
+        # if node has no children, simply remove it
+        if not node.left and not node.right:
+            if node.parent:
+                if node is node.parent.left:
+                    node.parent.left = None
+                else:
+                    node.parent.right = None
+                self._update_height(node.parent)
+            else:
+                self._root = None
+
+        # if node has only one child, replace it with its child
+        elif not node.left:
+            if node is node.parent.left:
+                node.parent.left = node.right
+            else:
+                node.parent.right = node.right
+            node.right.parent = node.parent
+            self._update_height(node.right)
+
+        elif not node.right:
+            if node is node.parent.left:
+                node.parent.left = node.left
+            else:
+                node.parent.right = node.left
+            node.left.parent = node.parent
+            self._update_height(node.left)
+
+        # if node has two children, replace it with its in-order successor
         else:
-            parent_node = current_node
-            current_node = current_node.right
+            successor = self._find_min(node.right)
+            node.value = successor.value
+            self._remove(successor)
 
-    # insert the new node
-    if value < parent_node.value:
-        parent_node.left = new_node
-    else:
-        parent_node.right = new_node
-    new_node.parent = parent_node
+        # rebalance the tree
+        self._rebalance(node.parent)
 
-    # update the height of all the nodes from the newly added node to the root
-    current_node = new_node
-    while current_node is not None:
-        current_node.update_height()
-        balance_factor = current_node.get_balance_factor()
-        if balance_factor < -1:
-            # the left subtree is taller
-            if current_node.left.get_balance_factor() > 0:
-                # the left subtree's right subtree is taller
-                current_node.left.rotate_left()
-            current_node.rotate_right()
-        elif balance_factor > 1:
-            # the right subtree is taller
-            if current_node.right.get_balance_factor() < 0:
-                # the right subtree's left subtree is taller
-                current_node.right.rotate_right()
-            current_node.rotate_left()
-        parent_node = current_node
-        current_node = current_node.parent
+    def _rebalance(self, node: AVLNode) -> None:
+        while node:
+            left_height = node.left.height if node.left else -1
+            right_height = node.right.height if node.right else -1
+            node.height = 1 + max(left_height, right_height)
 
-    # update the root if necessary
-    if parent_node is not None:
-        self._root = parent_node
+            balance_factor = self._balance_factor(node)
+
+            # left-left case
+            if balance_factor > 1 and self._balance_factor(node.left) >= 0:
+                self._rotate_right(node)
+
+            # left-right case
+            elif balance_factor > 1 and self._balance_factor(node.left) < 0:
+                self._rotate_left(node.left)
+                self._rotate_right(node)
+
+            # right-right case
+            elif balance_factor < -1 and self._balance_factor(node.right) <= 0:
+                self._rotate_left(node)
+
+            # right-left case
+            elif balance_factor < -1 and self._balance_factor(node.right) > 0:
+                self._rotate_right(node.right)
+                self._rotate_left(node)
+
+            node = node.parent
+
+    def _update_height(self, node: AVLNode) -> None:
+        while node:
+            left_height = node.left.height if node.left else -1
+            right_height = node.right.height if node.right else -1
+            node.height = 1 + max(left_height, right_height)
+            node = node.parent
+
+    def _find_min(self, node: AVLNode) -> AVLNode:
+        while node.left:
+            node = node.left
+        return node
+
+    def find(self, value: object) -> AVLNode:
+        node = self._root
+        while node:
+            if value == node.value:
+                return node
+            elif value < node.value:
+                node = node.left
+            else:
+                node = node.right
+        return None
+# ------------------- BASIC TESTING -----------------------------------------
 
 
-def remove(self, value: object) -> bool:
-    """
-    Remove the value from the AVL tree.
-    The method returns True if the value is removed. Otherwise, it returns False.
-    """
-    # find the node to be removed
-    node = self._find_node(value)
-    if node is None:
-        # the value is not in the tree
-        return False
+if __name__ == '__main__':
 
-    # if the node has both left and right child
-    if node.left is not None and node.right is not None:
-        # find the inorder successor
-        successor = node.right
-        while successor.left is not None:
-            successor = successor.left
+    print("\nPDF - method add() example 1")
+    print("----------------------------")
+    test_cases = (
+        (1, 2, 3),  # RR
+        (3, 2, 1),  # LL
+        (1, 3, 2),  # RL
+        (3, 1, 2),  # LR
+    )
+    for case in test_cases:
+        tree = AVL(case)
+        print(tree)
 
-        # swap the values of the node and its inorder successor
-        node.value, successor.value = successor.value, node.value
+    print("\nPDF - method add() example 2")
+    print("----------------------------")
+    test_cases = (
+        (10, 20, 30, 40, 50),   # RR, RR
+        (10, 20, 30, 50, 40),   # RR, RL
+        (30, 20, 10, 5, 1),     # LL, LL
+        (30, 20, 10, 1, 5),     # LL, LR
+        (5, 4, 6, 3, 7, 2, 8),  # LL, RR
+        (range(0, 30, 3)),
+        (range(0, 31, 3)),
+        (range(0, 34, 3)),
+        (range(10, -10, -2)),
+        ('A', 'B', 'C', 'D', 'E'),
+        (1, 1, 1, 1),
+    )
+    for case in test_cases:
+        tree = AVL(case)
+        print('INPUT  :', case)
+        print('RESULT :', tree)
 
-        # remove the successor instead
-        node = successor
+    print("\nPDF - method add() example 3")
+    print("----------------------------")
+    for _ in range(100):
+        case = list(set(random.randrange(1, 20000) for _ in range(900)))
+        tree = AVL()
+        for value in case:
+            tree.add(value)
+        if not tree.is_valid_avl():
+            raise Exception("PROBLEM WITH ADD OPERATION")
+    print('add() stress test finished')
 
-    # if the node has only one child or no child
-    child = node.left if node.left is not None else node.right
-    if child is not None:
-        # the child replaces the node
-        child.parent = node.parent
-        if node.parent is None:
-            self._root = child
-        elif node.parent.left == node:
-            node.parent.left = child
-        else:
-            node.parent.right = child
+    print("\nPDF - method remove() example 1")
+    print("-------------------------------")
+    test_cases = (
+        ((1, 2, 3), 1),  # no AVL rotation
+        ((1, 2, 3), 2),  # no AVL rotation
+        ((1, 2, 3), 3),  # no AVL rotation
+        ((50, 40, 60, 30, 70, 20, 80, 45), 0),
+        ((50, 40, 60, 30, 70, 20, 80, 45), 45),  # no AVL rotation
+        ((50, 40, 60, 30, 70, 20, 80, 45), 40),  # no AVL rotation
+        ((50, 40, 60, 30, 70, 20, 80, 45), 30),  # no AVL rotation
+    )
+    for case, del_value in test_cases:
+        tree = AVL(case)
+        print('INPUT  :', tree, "DEL:", del_value)
+        tree.remove(del_value)
+        print('RESULT :', tree)
 
-        # update heights of ancestors
-        current_node = child.parent
-        while current_node is not None:
-            current_node.update_height()
-            balance_factor = current_node.get_balance_factor()
-            if balance_factor < -1:
-                # the left subtree is taller
-                if current_node.left.get_balance_factor() > 0:
-                    # the left subtree's right subtree is taller
-                    current_node.left.rotate_left()
-                current_node.rotate_right()
-            elif balance_factor > 1:
-                # the right subtree is taller
-                if current_node.right.get_balance_factor() < 0:
-                    # the right subtree's left subtree is taller
-                    current_node.right.rotate_right()
-                current_node.rotate_left()
-            current_node = current_node.parent
-    else:
-        # the node has no child
-        if node.parent is None:
-            self._root = None
-        elif node.parent.left == node:
-            node.parent.left = None
-        else:
-            node.parent.right = None
+    print("\nPDF - method remove() example 2")
+    print("-------------------------------")
+    test_cases = (
+        ((50, 40, 60, 30, 70, 20, 80, 45), 20),  # RR
+        ((50, 40, 60, 30, 70, 20, 80, 15), 40),  # LL
+        ((50, 40, 60, 30, 70, 20, 80, 35), 20),  # RL
+        ((50, 40, 60, 30, 70, 20, 80, 25), 40),  # LR
+    )
+    for case, del_value in test_cases:
+        tree = AVL(case)
+        print('INPUT  :', tree, "DEL:", del_value)
+        tree.remove(del_value)
+        print('RESULT :', tree)
 
-        # update heights of ancestors
-        current_node = node.parent
-        while current_node is not None:
-            current_node.update_height()
-            balance_factor = current_node.get_balance_factor()
-            if balance_factor < -1:
-                # the left subtree is taller
-                if current_node.left.get_balance_factor() > 0:
-                    # the left subtree's right subtree is taller
-                    current_node.left.rotate_left()
-                current_node.rotate_right()
-            elif balance_factor > 1:
-                # the right subtree is taller
-                if current_node.right.get_balance_factor() < 0:
-                    # the right subtree's left subtree is taller
-                    current_node.right.rotate_right()
-                current_node.rotate_left()
-            current_node = current_node.parent
+    print("\nPDF - method remove() example 3")
+    print("-------------------------------")
+    case = range(-9, 16, 2)
+    tree = AVL(case)
+    for del_value in case:
+        print('INPUT  :', tree, del_value)
+        tree.remove(del_value)
+        print('RESULT :', tree)
 
-    # update the root if necessary
-    if self._root is not None:
-        self._root.parent = None
+    print("\nPDF - method remove() example 4")
+    print("-------------------------------")
+    case = range(0, 34, 3)
+    tree = AVL(case)
+    for _ in case[:-2]:
+        root_value = tree.get_root().value
+        print('INPUT  :', tree, root_value)
+        tree.remove(root_value)
+        print('RESULT :', tree)
 
-    return True
+    print("\nPDF - method remove() example 5")
+    print("-------------------------------")
+    for _ in range(100):
+        case = list(set(random.randrange(1, 20000) for _ in range(900)))
+        tree = AVL(case)
+        for value in case[::2]:
+            tree.remove(value)
+        if not tree.is_valid_avl():
+            raise Exception("PROBLEM WITH REMOVE OPERATION")
+    print('remove() stress test finished')
+
+    print("\nPDF - method contains() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 5, 15])
+    print(tree.contains(15))
+    print(tree.contains(-10))
+    print(tree.contains(15))
+
+    print("\nPDF - method contains() example 2")
+    print("---------------------------------")
+    tree = AVL()
+    print(tree.contains(0))
+
+    print("\nPDF - method inorder_traversal() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 20, 5, 15, 17, 7, 12])
+    print(tree.inorder_traversal())
+
+    print("\nPDF - method inorder_traversal() example 2")
+    print("---------------------------------")
+    tree = AVL([8, 10, -4, 5, -1])
+    print(tree.inorder_traversal())
+
+    print("\nPDF - method find_min() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 20, 5, 15, 17, 7, 12])
+    print(tree)
+    print("Minimum value is:", tree.find_min())
+
+    print("\nPDF - method find_min() example 2")
+    print("---------------------------------")
+    tree = AVL([8, 10, -4, 5, -1])
+    print(tree)
+    print("Minimum value is:", tree.find_min())
+
+    print("\nPDF - method find_max() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 20, 5, 15, 17, 7, 12])
+    print(tree)
+    print("Maximum value is:", tree.find_max())
+
+    print("\nPDF - method find_max() example 2")
+    print("---------------------------------")
+    tree = AVL([8, 10, -4, 5, -1])
+    print(tree)
+    print("Maximum value is:", tree.find_max())
+
+    print("\nPDF - method is_empty() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 20, 5, 15, 17, 7, 12])
+    print("Tree is empty:", tree.is_empty())
+
+    print("\nPDF - method is_empty() example 2")
+    print("---------------------------------")
+    tree = AVL()
+    print("Tree is empty:", tree.is_empty())
+
+    print("\nPDF - method make_empty() example 1")
+    print("---------------------------------")
+    tree = AVL([10, 20, 5, 15, 17, 7, 12])
+    print("Tree before make_empty():", tree)
+    tree.make_empty()
+    print("Tree after make_empty(): ", tree)
+
+    print("\nPDF - method make_empty() example 2")
+    print("---------------------------------")
+    tree = AVL()
+    print("Tree before make_empty():", tree)
+    tree.make_empty()
+    print("Tree after make_empty(): ", tree)
+
 # ------------------- BASIC TESTING -----------------------------------------
 
 

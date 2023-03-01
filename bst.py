@@ -104,7 +104,6 @@ class BST:
         return True
 
     # ------------------------------------------------------------------ #
-
     def add(self, value: object) -> None:
         new_node = BSTNode(value)
 
